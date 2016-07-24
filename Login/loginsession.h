@@ -43,6 +43,7 @@ private:
     int m_Program;
     int m_Build;
     int m_Process;
+    bool m_LogoutRequested;
 
 private:
     /*char m_TLSSendBuffer[4096];

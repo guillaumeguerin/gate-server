@@ -16,7 +16,9 @@
 #include "Util/serverconfig.h"
 #include "Util/serverclock.h"
 #include "Util/system.h"
+#include "Util/database.h"
 #include "Login/loginserver.h"
+#include "GW2/gw2blacklist.h"
 
 #define REQ_ARGUMENTS_C 1 // Require just the filename to the config file
 

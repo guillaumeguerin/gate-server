@@ -36,6 +36,20 @@ int Framework::RunGateway()
     printf("Starting %s\n", m_Options.m_ServerName);
     printf("Starting login gateway server on port %d\n", gatewayPort);
 
+    // Establish a connection to mysql db
+    if (!Database::Get().Initalize(
+                GetSettingString("networking.database.db_name"),
+                GetSettingString("networking.database.db_address"),
+                GetSettingString("networking.database.db_username"),
+                GetSettingString("networking.database.db_password"),
+                GetSettingInteger("networking.database.db_port")
+                )) {
+        printf("!) Unable to connect to database server (listner).\n");
+        return -1;
+    } else {
+        printf("Connected to database %s on %s\n", GetSettingString("networking.database.db_name"), GetSettingString("networking.database.db_address"));
+    }
+
     // This will spawn off the login / server socket thread
     if (!m_LoginServer.Startup(gatewayPort,
                                gatewayCertificate,
@@ -43,6 +57,13 @@ int Framework::RunGateway()
                                m_Options.m_MITMMode)) {
         m_LoginServer.Shutdown();
         printf("!) Unable to create login server (listner).\n");
+        return 1;
+    }
+
+    // Populates the blacklist file
+    if (!GW2BlackList::Initalize(GetSettingString("networking.login_server.blacklist"))) {
+        m_LoginServer.Shutdown();
+        printf("!) Unable to read ban list (listner).\n");
         return 1;
     }
 

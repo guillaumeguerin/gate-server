@@ -4,6 +4,8 @@ CONFIG -= app_bundle
 CONFIG -= qt
 CONFIG += c++11
 
+INCLUDEPATH += /usr/include/mysql++/ /usr/include/mysql/
+
 SOURCES += main.cpp \
     framework.cpp \
     Networking/xmlpacket.cpp \
@@ -22,11 +24,15 @@ SOURCES += main.cpp \
     3rdParty/sha256.cpp \
     Login/serverssl.cpp \
     Login/mitmsocket.cpp \
-    GW2/gw2packet.cpp
+    GW2/gw2packet.cpp \
+    GW2/gw2blacklist.cpp \
+    Util/database.cpp
 #-lmongoclient -lboost_system
 LIBS += -lconfig++ -pthread
 LIBS += -L"/usr/local/lib64/" -lcrypto
 LIBS += -L"/usr/local/lib64/" -lssl
+LIBS += -L"/usr/lib64/" -lmysqlpp
+
 QMAKE_CXXFLAGS +=
 
 include(deployment.pri)
@@ -55,4 +61,6 @@ HEADERS += \
     3rdParty/sha256.h \
     Login/serverssl.h \
     Login/mitmsocket.h \
-    GW2/gw2packet.h
+    GW2/gw2packet.h \
+    GW2/gw2blacklist.h \
+    Util/database.h

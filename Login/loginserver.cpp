@@ -1,6 +1,7 @@
 #include "loginserver.h"
 
-LoginServer::LoginServer() : m_Running(false), m_MitmMode(false), m_ServerPort(0), m_loginThread(), m_ClientsLock(), m_Clients(), m_SSL()
+LoginServer::LoginServer() : m_Running(false), m_MitmMode(false), m_ServerPort(0),
+    m_loginThread(), m_ClientsLock(), m_Clients(), m_SSL(), m_Gateways()
 {
 
 }
@@ -15,6 +16,15 @@ bool LoginServer::Startup(uint16_t ServerPort, const char* Certificate, const ch
     if (!m_SSL.Init(Certificate, PrivateKey)) {
         printf("Unable to init SSL, most likely an issue with reading the Certificate or Private Key\n.");
         return false;
+    }
+
+    auto gateWayQueryResults = Database::Get().RunQuery("SELECT * FROM cligate.Gates;");
+    mysqlpp::StoreQueryResult::const_iterator it;
+    for (it = gateWayQueryResults.begin(); it != gateWayQueryResults.end(); ++it) {
+        mysqlpp::Row row = *it;
+        auto region = std::string(row["gateRegion"]);
+        auto address = std::string(row["gateAddress"]);
+        m_Gateways[region] = address;
     }
 
     return true;
@@ -34,6 +44,12 @@ void LoginServer::Update()
         LoginClient* client = m_Clients.at(i);
 
         assert(client);
+
+        // TODO: Move this to a better place
+        if (GW2BlackList::CheckBlacklist(client->m_ClientIP)) {
+            printf("Client forcefully disconnected as they were on the ban list.\n");
+            client->Close();
+        }
 
         // Only interact with the client if its connected duh
         if (client->IsConnected()) {

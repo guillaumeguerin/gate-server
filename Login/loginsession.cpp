@@ -10,7 +10,7 @@ const char* g_AUTH_Logout           = "/Auth/LogoutMyClient STS/1.0";
 const char* g_AUTH_RequestGameToken = "/Auth/RequestGameToken STS/1.0";
 
 LoginSession::LoginSession(ClientConnection *Client) : m_Client(Client), m_ConnectionType(0), m_Program(0),
-    m_Build(0), m_Process(0), m_SendPackets(), m_TSLReady(false)
+    m_Build(0), m_Process(0), m_SendPackets(), m_TSLReady(false), m_LogoutRequested(false)
 {
 
 }
@@ -281,5 +281,5 @@ void LoginSession::RequestGameToken(XMLPacket *Packet)
 
 void LoginSession::Logout(XMLPacket *Packet)
 {
-
+    m_LogoutRequested = true;
 }

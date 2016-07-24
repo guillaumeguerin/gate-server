@@ -49,6 +49,7 @@ int ClientConnection::Poll(char *Buffer, unsigned int BufferSize) {
 
 void ClientConnection::Close() {
     close(m_ClientSocket);
+    m_ClientSocket = -1;
 }
 
 bool ClientConnection::IsConnected() {

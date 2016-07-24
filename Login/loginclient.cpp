@@ -14,6 +14,9 @@ LoginClient::~LoginClient()
 
 void LoginClient::Tick(ServerSSL *SSL, bool MitmMode)
 {
+    // Check if the client is on the blacklist
+
+
     // Create out MITM socket if needed, if that failes then make sure we do not try to send
     // or recieve on the mitm socket. This could cause havok, need a way to fail gracefully.
     if (MitmMode && !m_MitmSocket.IsCreated()) {
