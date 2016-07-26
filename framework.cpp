@@ -19,7 +19,6 @@ int Framework::Run(int argc, char **argv)
         return 1;
     }
 
-
     if (strcmp(m_Options.m_ServerMode, "gateway") == 0) {
         return RunGateway();
     }

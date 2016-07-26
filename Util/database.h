@@ -2,6 +2,7 @@
 #define DATABASE_H
 
 #include <mysql++.h>
+#include <functional>
 
 class Database
 {
@@ -18,6 +19,7 @@ public:
 public:
     bool                        Initalize(const char* database, const char *serverAddress, const char *username, const char *password, unsigned int port);
     mysqlpp::StoreQueryResult   RunQuery(const char* runQuery);
+    void                        ItterateQuery(const char *runQuery, std::function<void(mysqlpp::StoreQueryResult::const_iterator)>& ittFunct);
 
 private:
     static Database* g_Instance;

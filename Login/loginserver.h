@@ -24,22 +24,30 @@ class LoginServer
 {
 public:
     LoginServer();
+
 public:
     bool                                Startup(uint16_t ServerPort, const char *Certificate, const char *PrivateKey, bool MitmMode);
     void                                Update();
     void                                Shutdown();
+
 private:
     // Function used to spawn the login socket server, do not call directly from main thread.
     static void                         Run(LoginServer* Instance);
+
+public:
+    void                                RegisterGateway(std::string region, std::string address);
+
 private:
     bool                                m_Running;
     bool                                m_MitmMode;
     uint16_t                            m_ServerPort;
     std::thread                         m_loginThread;
+
 private:
     std::mutex                          m_ClientsLock;
     std::vector<LoginClient*>           m_Clients;
     std::map<std::string, std::string>  m_Gateways;
+
 private:
     ServerSSL                           m_SSL;
 };

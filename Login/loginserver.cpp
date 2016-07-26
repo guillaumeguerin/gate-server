@@ -18,14 +18,12 @@ bool LoginServer::Startup(uint16_t ServerPort, const char* Certificate, const ch
         return false;
     }
 
-    auto gateWayQueryResults = Database::Get().RunQuery("SELECT * FROM cligate.Gates;");
-    mysqlpp::StoreQueryResult::const_iterator it;
-    for (it = gateWayQueryResults.begin(); it != gateWayQueryResults.end(); ++it) {
-        mysqlpp::Row row = *it;
-        auto region = std::string(row["gateRegion"]);
-        auto address = std::string(row["gateAddress"]);
-        m_Gateways[region] = address;
-    }
+    std::function<void(mysqlpp::StoreQueryResult::const_iterator)> funct = [this] (mysqlpp::StoreQueryResult::const_iterator itt) {
+            this->RegisterGateway(std::string((*itt)["gateRegion"]), std::string((*itt)["gateAddress"]));
+        };
+
+    Database::Get().ItterateQuery("SELECT * FROM cligate.Gates;", funct);
+    printf("Login server discovered %d gateway/s\n", m_Gateways.size());
 
     return true;
 }
@@ -96,5 +94,10 @@ void LoginServer::Run(LoginServer *Instance)
     }
 
     runningSocket.Flush();
+}
+
+void LoginServer::RegisterGateway(std::string region, std::string address)
+{
+    m_Gateways[region] = address;
 }
 

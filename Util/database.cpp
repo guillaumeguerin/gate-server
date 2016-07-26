@@ -49,3 +49,12 @@ mysqlpp::StoreQueryResult Database::RunQuery(const char *runQuery)
 
     return result;
 }
+
+void Database::ItterateQuery(const char *runQuery, std::function<void(mysqlpp::StoreQueryResult::const_iterator)>& ittFunct)
+{
+    auto queryResults = RunQuery(runQuery);
+    mysqlpp::StoreQueryResult::const_iterator it;
+    for (it = queryResults.begin(); it != queryResults.end(); ++it) {
+        ittFunct(it);
+    }
+}
