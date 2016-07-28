@@ -8,12 +8,16 @@
  * */
 
 #include "securelogin.h"
-#include "../GW2/gw2packet.h"
-#include "../Networking/xmlpacket.h"
-#include "../Networking/clientconnection.h"
+#include "GW2/gw2packet.h"
+#include "Networking/xmlpacket.h"
+#include "Networking/clientconnection.h"
+#include "Util/database.h"
+#include "3rdParty/sha256.h"
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <uuid/uuid.h>
+#include <string>
 
 struct SessionSendPacket {
     char m_TLSSendBuffer[4096];
@@ -36,6 +40,8 @@ private:
     void ListGameAccounts(XMLPacket* Packet);
     void RequestGameToken(XMLPacket* Packet);
     void Logout(XMLPacket *Packet);
+private:
+    std::string CreateGuid();
 private:
     ClientConnection* m_Client;
 private:

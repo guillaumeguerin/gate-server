@@ -107,20 +107,68 @@ void LoginSession::StartTLS(XMLPacket *Packet)
 void LoginSession::GetHostname(XMLPacket *Packet)
 {
     rapidxml::xml_node<>* requestNode = Packet->m_XMLDocument.first_node("Request");
+    bool validUser  = false;
+    int userId      = -1;
+    std::string userRegion;
+    std::string userGateway;
 
     // TODO: hook the below code up to the database, we may
     // want to send them to a diffrent server if say portal = bot?
-    auto loginName = requestNode->first_node("LoginName")->value();
-    auto provider = requestNode->first_node("Provider")->value();
+    auto loginName  = requestNode->first_node("LoginName")->value();
+    auto provider   = requestNode->first_node("Provider")->value();
+
+    try {
+        auto userQuery = Database::Get().PrepareQuery("SELECT * FROM cligate.Users where userEmail = %0q;");
+        auto gatewayQuery = Database::Get().PrepareQuery("SELECT * FROM cligate.Gates WHERE gateRegion = %0q;");
+
+        auto result = userQuery.store(loginName);
+        if (result.size() != 0) {
+            validUser   = true;
+            if (result.size() > 1) {
+                printf("Data consistency error, an email address appear's more than once in the users table.");
+            }
+            userId      = atoi(std::string(result.front()["userId"]).c_str());
+            userRegion  = std::string(result.front()["userRegion"]).c_str();
+        }
+
+        result = gatewayQuery.store(userRegion);
+        if (result.size() != 0) {
+            validUser   = true;
+            if (result.size() > 1) {
+                printf("Data consistency error, more than one gateway exists for a region.");
+            }
+            userGateway  = std::string(result.front()["gateAddress"]).c_str();
+        }
+
+    }
+    catch (const mysqlpp::BadQuery& er) {
+        std::cerr << "Query error: " << er.what() << std::endl;
+        m_LogoutRequested = true;
+        return;
+    }
+    catch (const mysqlpp::BadConversion& er) {
+        std::cerr << "Conversion error: " << er.what() << std::endl <<
+                "\tretrieved data size: " << er.retrieved <<
+                ", actual size: " << er.actual_size << std::endl;
+        m_LogoutRequested = true;
+        return;
+    }
+    catch (const mysqlpp::Exception& er) {
+        std::cerr << "Error: " << er.what() << std::endl;
+        m_LogoutRequested = true;
+        return;
+    }
 
     // Debug message.
     printf("User %s is logging in using %s\n", loginName, provider);
+    printf("Forwarding %s to %s\n", loginName, userGateway.c_str());
     int sequence = Packet->m_Meta[2] - '0';
 
     // Form a packet, the only element is the detination host name
     // GW2 will then try to connect to the specified server.
     GW2Packet replyPacket("", sequence, PT_REPLY);
-    replyPacket.AddElement("Hostname", "cligate-fra.101.ncplatform.net.");
+    replyPacket.AddElement("Hostname", userGateway.c_str());
+    //replyPacket.AddElement("Hostname", "cligate-fra.101.ncplatform.net.");
 
     // Signal that there is TLS data to be sent next time round.
     SessionSendPacket packet;
@@ -138,12 +186,14 @@ void LoginSession::StartSsoLogin(XMLPacket *Packet)
     char password[1024];
     memset(password, 0, 1024);
     int passwordLength = -1;
-
-    char* username = nullptr;
+    char* emailaddress = nullptr;
     char* passwordBase64 = nullptr;
+    std::string sha256Password;
+    std::string guid;
+    std::string username;
 
     try {
-        username = requestNode->first_node("LoginName")->value();
+        emailaddress = requestNode->first_node("LoginName")->value();
         if (requestNode->first_node("Password") != nullptr) {
             passwordBase64 = requestNode->first_node("Password")->value();
             auto    bio = BIO_new_mem_buf(passwordBase64, -1);
@@ -154,10 +204,38 @@ void LoginSession::StartSsoLogin(XMLPacket *Packet)
             passwordLength = BIO_read(bio, password, strlen(passwordBase64));
             BIO_free_all(bio);
         }
+
+        auto userQuery = Database::Get().PrepareQuery("SELECT * FROM cligate.Users where userEmail = %0q;");
+        auto result = userQuery.store(emailaddress);
+        if (result.size() != 0) {
+            if (result.size() > 1) {
+                printf("Data consistency error, an email address appear's more than once in the users table.");
+            }
+            sha256Password  = std::string(result.front()["userPassword"]).c_str();
+            guid            = std::string(result.front()["userGuid"]).c_str();
+            username        = std::string(result.front()["userName"]).c_str();
+        }
     }
     catch(std::exception ex)
     {
         printf("Password tokens not supported.\n");
+        return;
+    }
+    catch (const mysqlpp::BadQuery& er) {
+        std::cerr << "Query error: " << er.what() << std::endl;
+        m_LogoutRequested = true;
+        return;
+    }
+    catch (const mysqlpp::BadConversion& er) {
+        std::cerr << "Conversion error: " << er.what() << std::endl <<
+                "\tretrieved data size: " << er.retrieved <<
+                ", actual size: " << er.actual_size << std::endl;
+        m_LogoutRequested = true;
+        return;
+    }
+    catch (const mysqlpp::Exception& er) {
+        std::cerr << "Error: " << er.what() << std::endl;
+        m_LogoutRequested = true;
         return;
     }
 
@@ -168,19 +246,27 @@ void LoginSession::StartSsoLogin(XMLPacket *Packet)
         return;
     }
 
-    printf("Login >> %s with %s\n", username, password);
+    //printf("Login >> %s with %s\n", username, password);
+    eSHA256::SHA256 sha256;
+    if (sha256(password).compare(sha256Password) != 0) {
+        printf("email %s entered an incorrect password\n", emailaddress);
+        m_LogoutRequested = true;
+        return;
+    }
+
     int sequence = Packet->m_Meta[2] - '0';
 
-    const char* temporary_guid = "0687C32C-0331-E611-80C3-ECB1D78A5C75";
-    const char* temporary_resumeToken = "22236HTR-CCCC-CCCC-CCCC-2310CCCCC93A";
-    const char* temporary_username = "nomelx.devel";
+    std::string resumetoken = CreateGuid();
+
+    //const char* temporary_guid = "0687C32C-0331-E611-80C3-ECB1D78A5C75";
+    //const char* temporary_username = "nomelx.devel";
 
     GW2Packet replyPacket("", sequence, PT_REPLY);
-    replyPacket.AddElement("UserId", temporary_guid);
+    replyPacket.AddElement("UserId", guid.c_str());
     replyPacket.AddElement("UserCenter", "5");
-    replyPacket.AddElement("UserName", temporary_username);
+    replyPacket.AddElement("UserName", username.c_str());
     replyPacket.AddElement("Parts", "");
-    replyPacket.AddElement("ResumeToken", temporary_resumeToken);
+    replyPacket.AddElement("ResumeToken", resumetoken.c_str());
     replyPacket.AddElement("EmailVerified", "1");
 
 
@@ -282,4 +368,13 @@ void LoginSession::RequestGameToken(XMLPacket *Packet)
 void LoginSession::Logout(XMLPacket *Packet)
 {
     m_LogoutRequested = true;
+}
+
+std::string LoginSession::CreateGuid()
+{
+    uuid_t id;
+    uuid_generate(id);
+    char guidString[256];
+    uuid_unparse(id, guidString);
+    return std::string(guidString);
 }

@@ -36,6 +36,9 @@ private:
 
 public:
     void                                RegisterGateway(std::string region, std::string address);
+    ServerSSL*                          SSL();
+    bool                                Mitm();
+    void                                DisableMitm();
 
 private:
     bool                                m_Running;

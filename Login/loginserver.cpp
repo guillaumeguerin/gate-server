@@ -51,7 +51,7 @@ void LoginServer::Update()
 
         // Only interact with the client if its connected duh
         if (client->IsConnected()) {
-            client->Tick(&this->m_SSL, m_MitmMode);
+            client->Tick(this);
         } else {
             m_Clients.erase(m_Clients.begin()+i);
             printf("Client Disconnected: %s\n", client->m_ClientIP);
@@ -101,3 +101,17 @@ void LoginServer::RegisterGateway(std::string region, std::string address)
     m_Gateways[region] = address;
 }
 
+ServerSSL *LoginServer::SSL()
+{
+    return &m_SSL;
+}
+
+bool LoginServer::Mitm()
+{
+    return m_MitmMode;
+}
+
+void LoginServer::DisableMitm()
+{
+    m_MitmMode = false;
+}

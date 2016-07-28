@@ -28,7 +28,7 @@ SOURCES += main.cpp \
     GW2/gw2blacklist.cpp \
     Util/database.cpp
 #-lmongoclient -lboost_system
-LIBS += -lconfig++ -pthread
+LIBS += -lconfig++ -pthread -luuid
 LIBS += -L"/usr/local/lib64/" -lcrypto
 LIBS += -L"/usr/local/lib64/" -lssl
 LIBS += -L"/usr/lib64/" -lmysqlpp

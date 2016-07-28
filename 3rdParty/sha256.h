@@ -34,45 +34,50 @@ typedef unsigned __int64 uint64_t;
       sha256.add(pointer to fresh data, number of new bytes);
     std::string myHash3 = sha256.getHash();
   */
-class SHA256 //: public Hash
-{
-public:
-  /// split into 64 byte blocks (=> 512 bits), hash is 32 bytes long
-  enum { BlockSize = 512 / 8, HashBytes = 32 };
 
-  /// same as reset()
-  SHA256();
+namespace eSHA256 {
 
-  /// compute SHA256 of a memory block
-  std::string operator()(const void* data, size_t numBytes);
-  /// compute SHA256 of a string, excluding final zero
-  std::string operator()(const std::string& text);
+    class SHA256 //: public Hash
+    {
+    public:
+      /// split into 64 byte blocks (=> 512 bits), hash is 32 bytes long
+      enum { BlockSize = 512 / 8, HashBytes = 32 };
 
-  /// add arbitrary number of bytes
-  void add(const void* data, size_t numBytes);
+      /// same as reset()
+      SHA256();
 
-  /// return latest hash as 64 hex characters
-  std::string getHash();
-  /// return latest hash as bytes
-  void        getHash(unsigned char buffer[HashBytes]);
+      /// compute SHA256 of a memory block
+      std::string operator()(const void* data, size_t numBytes);
+      /// compute SHA256 of a string, excluding final zero
+      std::string operator()(const std::string& text);
 
-  /// restart
-  void reset();
+      /// add arbitrary number of bytes
+      void add(const void* data, size_t numBytes);
 
-private:
-  /// process 64 bytes
-  void processBlock(const void* data);
-  /// process everything left in the internal buffer
-  void processBuffer();
+      /// return latest hash as 64 hex characters
+      std::string getHash();
+      /// return latest hash as bytes
+      void        getHash(unsigned char buffer[HashBytes]);
 
-  /// size of processed data in bytes
-  uint64_t m_numBytes;
-  /// valid bytes in m_buffer
-  size_t   m_bufferSize;
-  /// bytes not processed yet
-  uint8_t  m_buffer[BlockSize];
+      /// restart
+      void reset();
 
-  enum { HashValues = HashBytes / 4 };
-  /// hash, stored as integers
-  uint32_t m_hash[HashValues];
-};
+    private:
+      /// process 64 bytes
+      void processBlock(const void* data);
+      /// process everything left in the internal buffer
+      void processBuffer();
+
+      /// size of processed data in bytes
+      uint64_t m_numBytes;
+      /// valid bytes in m_buffer
+      size_t   m_bufferSize;
+      /// bytes not processed yet
+      uint8_t  m_buffer[BlockSize];
+
+      enum { HashValues = HashBytes / 4 };
+      /// hash, stored as integers
+      uint32_t m_hash[HashValues];
+    };
+
+}

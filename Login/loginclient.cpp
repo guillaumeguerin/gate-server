@@ -1,4 +1,5 @@
 #include "loginclient.h"
+#include "loginserver.h"
 
 LoginClient::LoginClient(ClientConnection &Base) : ClientConnection(), m_Packet(), m_Login(this), m_Session(this), m_MitmSocket()
 {
@@ -12,16 +13,16 @@ LoginClient::~LoginClient()
 
 }
 
-void LoginClient::Tick(ServerSSL *SSL, bool MitmMode)
+void LoginClient::Tick(LoginServer *ServerInstance)
 {
     // Check if the client is on the blacklist
 
 
     // Create out MITM socket if needed, if that failes then make sure we do not try to send
     // or recieve on the mitm socket. This could cause havok, need a way to fail gracefully.
-    if (MitmMode && !m_MitmSocket.IsCreated()) {
+    if (ServerInstance->Mitm() && !m_MitmSocket.IsCreated()) {
         if (!m_MitmSocket.Create()) {
-            MitmMode = false ;
+            ServerInstance->DisableMitm();
         }
     }
 
@@ -36,7 +37,7 @@ void LoginClient::Tick(ServerSSL *SSL, bool MitmMode)
         // See if we can read the data as an xml request.
         if (readLength > 0 && m_Packet.Parse(incommingBuffer, readLength) && m_Packet.Validate()) {
 
-            if (MitmMode) {
+            if (ServerInstance->Mitm()) {
                 m_MitmSocket.OnServerRecieve(&m_Packet, incommingBuffer, readLength);
             }
 
@@ -52,9 +53,9 @@ void LoginClient::Tick(ServerSSL *SSL, bool MitmMode)
     // Otherwise its probably a game / ssl packet
     else {
 
-        auto loginState = m_Login.Recieve(SSL);
+        auto loginState = m_Login.Recieve(ServerInstance->SSL());
 
-        if (MitmMode) {
+        if (ServerInstance->Mitm()) {
             if (m_MitmSocket.TLSReady() && m_MitmSocket.TLSEstablished() == false) {
                 if (!m_MitmSocket.EstablishTLSSession()) {
                     printf("<MITM> Error estabilshing TLS session with ANet.\n");

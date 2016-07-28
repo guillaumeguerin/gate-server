@@ -33,6 +33,13 @@ bool Database::Initalize(const char* database, const char *serverAddress, const 
     return true;
 }
 
+mysqlpp::Query Database::PrepareQuery(const char *query)
+{
+    auto preparedQuery = m_Connection.query(query);
+    preparedQuery.parse();
+    return preparedQuery;
+}
+
 mysqlpp::StoreQueryResult Database::RunQuery(const char *runQuery)
 {
     mysqlpp::StoreQueryResult result;

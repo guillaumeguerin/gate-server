@@ -14,10 +14,13 @@
 #include "../Networking/xmlpacket.h"
 #include "../GW2/gw2common.h"
 #include "../Util/system.h"
+#include "../Util/database.h"
 
 #include "mitmsocket.h"
 #include "securelogin.h"
 #include "loginsession.h"
+
+class LoginServer;
 
 class LoginClient : public ClientConnection
 {
@@ -27,7 +30,7 @@ public:
     ~LoginClient();
 
 public:
-    void Tick(ServerSSL* SSL, bool MitmMode);
+    void Tick(LoginServer* ServerInstance);
 
 private:
     XMLPacket m_Packet;

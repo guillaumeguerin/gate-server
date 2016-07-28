@@ -18,6 +18,7 @@ public:
 
 public:
     bool                        Initalize(const char* database, const char *serverAddress, const char *username, const char *password, unsigned int port);
+    mysqlpp::Query              PrepareQuery(const char* query);
     mysqlpp::StoreQueryResult   RunQuery(const char* runQuery);
     void                        ItterateQuery(const char *runQuery, std::function<void(mysqlpp::StoreQueryResult::const_iterator)>& ittFunct);
 
