@@ -41,6 +41,7 @@ public:
 public:
     int                 Run(int argc, char** argv);
     int                 RunGateway();
+    int                 RunAuth();
 public:
     bool                Configure(int argc, char** argv);
 public:

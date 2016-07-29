@@ -352,7 +352,7 @@ void LoginSession::RequestGameToken(XMLPacket *Packet)
     // Form a packet, the only element is the detination host name
     // GW2 will then try to connect to the specified server.
     GW2Packet replyPacket("", sequence, PT_REPLY);
-    replyPacket.AddElement("Token", "0XXXX32C-XXXX-XXXX-XXXX-XXXXD78XXXX5");
+    replyPacket.AddElement("Token", "fe9484c3-d53a-4225-a2d6-096be358af73");
 
     // Signal that there is TLS data to be sent next time round.
     SessionSendPacket packet;
